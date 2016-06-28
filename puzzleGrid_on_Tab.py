@@ -67,9 +67,7 @@ class PuzzleGrid_on_Tab(GridLayout):
             self.check = not self.check                                         # сигналим изменение
 
 # Изменение размерности поля
-    def change_scale(self, scale):
-        a = int(math.sqrt(scale))
-        b = int(round(scale / a - 0.45))
+    def resize(self, a, b):
         self.sizeV = a
         self.sizeH = b
         self.puzz = Puzzle(self.sizeH, self.sizeV)
