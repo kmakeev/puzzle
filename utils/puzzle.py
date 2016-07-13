@@ -59,6 +59,9 @@ class Puzzle:
         self.puzzle = puzzle
         return self.start
 
+    def set_start(self, start):
+        self.start = start
+
     # Поиск решения из текущего состояния start
 
     def searchSolution(self):

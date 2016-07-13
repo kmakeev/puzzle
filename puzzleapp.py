@@ -33,15 +33,6 @@ Builder.load_string("""
             font_size: 24
             size_hint: (0.2, 0.1)
             pos_hint: {'x':0.77, 'y': 0.035}
-        #Slider:
-        #    id: slider1
-        #    min: 4
-        #    max: 49
-        #    value: 16
-        #    step: 1
-        #    size_hint: (0.27, 0.1)
-        #    pos_hint: {'x':0.05, 'y': 0.035}
-        #    on_value: idPuzzleGrid_on_Tab1.change_scale(slider1.value)
         Button:
             text: 'New'
             size_hint: (0.2, 0.1)
@@ -60,15 +51,19 @@ Builder.load_string("""
             font_size: 24
             size_hint: (0.2, 0.1)
             pos_hint: {'x':0.77, 'y': 0.035}
-        #Slider:
-        #    id: slider2
-        #    min: 4
-        #    max: 49
-        #    value: 16
-        #    step: 1
-        #    size_hint: (0.27, 0.1)
-        #    pos_hint: {'x':0.05, 'y': 0.035}
-        #    on_value: idPuzzleGrid_on_Tab2.change_scale(slider2.value)
+        Button:
+            id: start_btn
+            text: 'Start'
+            size_hint: (0.2, 0.1)
+            pos_hint: {'x': 0.35, 'y': 0.035}
+            font_size: self.height - 10
+            on_press: idPuzzleGrid_on_Tab2.start_evr()
+        # Button:
+            # text: 'Play'
+            # size_hint: (0.2, 0.1)
+            # pos_hint: {'x': 0.55, 'y': 0.035}
+            # font_size: self.height - 10
+            # on_press: idPuzzleGrid_on_Tab2.playOnEvr()
     PuzzleLayout_on_Tab3
         id: _PuzzleLayout_on_Tab3
         PuzzleGrid_on_Tab3
@@ -80,15 +75,6 @@ Builder.load_string("""
             font_size: 24
             size_hint: (0.2, 0.1)
             pos_hint: {'x':0.77, 'y': 0.035}
-        #Slider:
-        #    id: slider3
-        #    min: 4
-        #    max: 49
-        #    value: 16
-        #    step: 1
-        #    size_hint: (0.27, 0.1)
-        #    pos_hint: {'x':0.05, 'y': 0.035}
-        #    on_value: idPuzzleGrid_on_Tab3.change_scale(slider3.value)
     TabbedPanelHeader:
         id: tab1
         border: 0, 0, 0, 0
@@ -202,7 +188,12 @@ class PuzzleApp(App):
         tabbed_panel.ids['idPuzzleGrid_on_Tab1'].resize(int(s[0]), int(s[2]))
         tabbed_panel.ids['idPuzzleGrid_on_Tab2'].resize(int(s[0]), int(s[2]))
         tabbed_panel.ids['idPuzzleGrid_on_Tab3'].resize(int(s[0]), int(s[2]))
+        tabbed_panel.ids['idPuzzleGrid_on_Tab2'].bind(play=self.onPlay)
         return tabbed_panel
+
+    def onPlay(self, instance, value):
+        self.tabbed_panel.ids['start_btn'].disabled = value
+
 
     def build_config(self, config):
         config.add_section('puzzle')

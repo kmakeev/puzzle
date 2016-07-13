@@ -6,6 +6,8 @@ from gridentry import GridEntry
 from utils.puzzle import Puzzle
 from utils.puzzle import turple_repl
 
+import threading
+
 import math
 
 
@@ -21,12 +23,16 @@ class PuzzleGrid_on_Tab(GridLayout):
     puzz = Puzzle(sizeH, sizeV)                             # сам пазл в виде списка координат
     start = puzz.generate_puzzle()
     puzzle = puzz.puzzle
+    step = 0
+    play = BooleanProperty(False)
+    start_Th = threading.Event()
 
     def __init__(self, *args, **kwargs):                    # конструктор
         super(PuzzleGrid_on_Tab, self).__init__(*args, **kwargs)
         self.generateGrid(self.sizeH, self.sizeV)
         self.bind(check=self.checkWin)
         self.bind(isWin=self.win)
+
         # Clock.schedule_interval(self.show_time, 1)
 
     def generateGrid(self, V, H):                           # генерирурем PuzzleGrid
@@ -137,9 +143,63 @@ class PuzzleGrid_on_Tab(GridLayout):
             if self.puzzle[i - 1] != i:
                 result = False
                 break
-        if result: print(' In chek win, puzzle - ', self.puzzle)
+        if result:
+            print(' In chek win, puzzle - ', self.puzzle)
         return result
 
     def show_time(self, dt):
         # print (dt)
         self.parent.time += 1
+
+# Запуск эвристического поиска решения
+    def start_evr(self):
+        print('In play on Evr')
+        if not self.start_Th.isSet():
+            self.puzz.set_start(self.start)
+            self.p1 = threading.Thread(target=self.searchOnEvrStart)  # Для запуска поиска решения в отдельном потоке
+            self.start_Th.set()
+            self.play = True
+            self.p1.start()
+
+    def searchOnEvrStart(self):
+
+
+        self.path_map = self.puzz.searchSolution()
+        print(self.path_map)
+        print(len(self.path_map) - 1)
+        self.step = len(self.path_map) - 1
+        Clock.schedule_interval(self.my_play, 0.7)
+        self.start_Th.clear()
+
+    def stopPlayEvr(self):  # Останов игры после поиска решения эвристикой
+        # print('In Stop')
+        # print('Is Alive', self.p1.isAlive())
+        # if (self.start_Th.isSet() & self.p1.isAlive():
+        Clock.unschedule(self.my_play)
+        self.start_Th.clear()
+        # print ('Event start - ', self.start_Th.isSet())
+
+    def my_play(self, dt):  # Игра с помощью найденного эвристического решения
+
+        if self.step != 0:
+            # print(self.path_map[self.step])
+            pos = self.path_map[self.step][self.sizeH * self.sizeV - 1]
+            # print('Go to -', pos)
+            self.press(pos)  # передаем куда пошла пустая 16-клетка
+            self.step -= 1
+        else:
+            # self.start_Th.clear()
+            Clock.unschedule(self.my_play)
+            self.play = False
+
+
+    def press(self, pos):  # Эммитируем нажатиа на кнопку в которой указана передаваемая позиция
+
+        for i in self.children:  # ищем объект кнопки, содержащий переданную позицию
+            if i.position == pos:
+                j = i
+                break
+        self.button_pressed(j)  # эммитируем нажатие найденного объекта кнопки
+
+
+
