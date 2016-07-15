@@ -8,7 +8,10 @@ from utils.puzzle import turple_repl
 
 import threading
 
+from keras.preprocessing.sequence import pad_sequences
+import numpy as np
 import math
+
 
 
 # Класс сетки пазла
@@ -16,6 +19,7 @@ class PuzzleGrid_on_Tab(GridLayout):
 
     sizeH = 4
     sizeV = 4
+    datadim = 2 * 4 * 4
     puzzle = ListProperty()                                 # свойство, хранит пазл в виде цифр
     puzzle_before_turn = ListProperty([1, 1, 1])            # пазл дo сделанного хода
     isWin = BooleanProperty(False)                          # признак того, что все собрали
@@ -32,6 +36,7 @@ class PuzzleGrid_on_Tab(GridLayout):
         self.generateGrid(self.sizeH, self.sizeV)
         self.bind(check=self.checkWin)
         self.bind(isWin=self.win)
+
 
         # Clock.schedule_interval(self.show_time, 1)
 
@@ -162,8 +167,6 @@ class PuzzleGrid_on_Tab(GridLayout):
             self.p1.start()
 
     def searchOnEvrStart(self):
-
-
         self.path_map = self.puzz.searchSolution()
         print(self.path_map)
         print(len(self.path_map) - 1)
@@ -192,14 +195,53 @@ class PuzzleGrid_on_Tab(GridLayout):
             Clock.unschedule(self.my_play)
             self.play = False
 
+    # Запуск игры с помощью нейронной сети
+    def start_on_II(self):
+        if self.isSoapPresent:
+            self.play = True
+            Clock.schedule_interval(self.my_playII, 1)
+        # if not self.start_Th.isSet():
+        #    self.puzz.set_start(self.start)
+        #    self.p1 = threading.Thread(
+        #        target=self.searchOnEvrStart)  # Для запуска поиска решения в отдельном потоке
+        #    self.start_Th.set()
+        #    self.play = True
+        #    self.p1.start()
+
+    # Игра с помощью нейронной сети
+    def my_playII(self, dt):
+
+        self.puzz.set_start(self.start)
+        values = self.puzz.searh_values()
+        # print('Values - ', values)
+        values.shape = (-1, 2, 2 * self.sizeH * self.sizeV)
+        pos = [0, 0]
+        maxIIValue = 0
+        self.iiValues = []
+        for X in values:
+            X.shape = (-1, 2 * self.sizeH * self.sizeV)
+            X = np.array(pad_sequences(X, maxlen=self.datadim, padding='post'))
+            X.shape = (-1, 2 * self.datadim)
+            prediction = self.client.service.get_predict_on_batch({'float': X[0].tolist()})
+            X.shape = (-1, self.datadim, 2)
+            self.iiValues.append(prediction[0][0])
+            if (prediction[0][0] > maxIIValue):
+                maxIIValue = prediction[0][0]
+                pos = X[0][self.datadim / 2 + self.sizeH * self.sizeV - 1]
+        self.iiValues.sort()
+        print('Values - ', self.iiValues)
+        print('MaxIIValue - ', maxIIValue)
+        print('Pos in MaxIIValue - ', pos)
+        self.press(pos.tolist())
+        self.play = False
+        Clock.unschedule(self.my_playII)
 
     def press(self, pos):  # Эммитируем нажатиа на кнопку в которой указана передаваемая позиция
 
         for i in self.children:  # ищем объект кнопки, содержащий переданную позицию
             if i.position == pos:
-                j = i
                 break
-        self.button_pressed(j)  # эммитируем нажатие найденного объекта кнопки
+        self.button_pressed(i)  # эммитируем нажатие найденного объекта кнопки
 
 
 

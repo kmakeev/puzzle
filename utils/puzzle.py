@@ -4,7 +4,7 @@
 
 import random
 from heapq import heappush, heappop
-
+import numpy as np
 
 class Puzzle:
 
@@ -254,6 +254,79 @@ class Puzzle:
                 break
         return iInOpenset
 
+    # Поиск индекса элемента в массиве
+    # Вход:
+    # arr - Массив с данными
+    # value - элемент для поиска
+    # Выход:
+    # Индекс элемента, присутсвующего в массиве.  -1, если он не найден
+    def find_index(self, arr, value):
+        index = -1;
+        for i in range(len(arr)):
+            # print(arr[i])
+            if np.array_equal(arr[i], value):
+                index = i
+        return index
+
+    # Поиск возможных ходов из текущего состояния пазла
+    # В данной функции учитываются ошибочные варианты ходов (т.е. в ответ попадают варианты с выходом за границы (-1 в индексе позиции))
+    # Вход:
+    # isFrom - текущее состояние пазла
+    # sizeH, sizeV - - размер полей позла по гороизонтали и вертикали
+    # Выход:
+    # allgraphs - Масив с перечнем возможных выриантов перехода
+
+    def searh_values(self):
+        isFrom = self.start
+        sizeH = self.sizeH
+        sizeV = self.sizeV
+        # graphs = np.array([])
+        allgraphs = np.array([])
+
+        if len(isFrom):
+            positionIsFrom = isFrom[sizeH * sizeV - 1]
+            tmp = [positionIsFrom[0] - 1, positionIsFrom[1]]
+            isToTmp = np.array(isFrom)
+
+            i = self.find_index(isToTmp, tmp)
+            if (i >= 0):
+                isToTmp[i] = isToTmp[sizeH * sizeV - 1]
+            isToTmp[sizeH * sizeV - 1] = tmp
+            graphs = np.concatenate((isFrom, isToTmp))
+            allgraphs = np.append(allgraphs, [graphs])
+
+            tmp = [positionIsFrom[0] + 1, positionIsFrom[1]]
+            isToTmp = np.array(isFrom)
+
+            i = self.find_index(isToTmp, tmp)
+            if (i >= 0):
+                isToTmp[i] = isToTmp[sizeH * sizeV - 1]
+            isToTmp[sizeH * sizeV - 1] = tmp
+            graphs = np.concatenate((isFrom, isToTmp))
+            allgraphs = np.append(allgraphs, [graphs])
+
+            tmp = [positionIsFrom[0], positionIsFrom[1] - 1]
+            isToTmp = np.array(isFrom)
+
+            i = self.find_index(isToTmp, tmp)
+            if (i >= 0):
+                isToTmp[i] = isToTmp[sizeH * sizeV - 1]
+            isToTmp[sizeH * sizeV - 1] = tmp
+            graphs = np.concatenate((isFrom, isToTmp))
+            allgraphs = np.append(allgraphs, [graphs])
+
+            tmp = [positionIsFrom[0], positionIsFrom[1] + 1]
+            isToTmp = np.array(isFrom)
+
+            i = self.find_index(isToTmp, tmp)
+            if (i >= 0):
+                isToTmp[i] = isToTmp[sizeH * sizeV - 1]
+            isToTmp[sizeH * sizeV - 1] = tmp
+            graphs = np.concatenate((isFrom, isToTmp))
+            allgraphs = np.append(allgraphs, [graphs])
+
+        return allgraphs
+
 # Замена элемента в кортеже
 # Вход:
 # t - исходный кортеж
@@ -265,4 +338,7 @@ def turple_repl(new_el, pos, t):
     assert isinstance(t, tuple)
     pos = int(pos)
     return t[:pos] + (new_el,) + t[pos + 1:]
+
+
+
 

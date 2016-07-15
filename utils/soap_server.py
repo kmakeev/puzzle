@@ -6,10 +6,12 @@ import logging
 
 from model_v_2 import ModelII
 from wsgiref.simple_server import make_server
-
 import numpy as np
 
 
+"""
+Класс синглтона для модели нейронной сети
+"""
 class Singleton(object):
 
     model = ModelII()
@@ -20,6 +22,10 @@ class Singleton(object):
             class_._instance = object.__new__(class_, *args, **kwargs)
         return class_._instance
 
+
+"""
+Класс soap - сервиса для обработки запросов
+"""
 class PuzzleService(ServiceBase):
 
    
@@ -76,5 +82,5 @@ logging.info("wsdl is at: http://localhost:8000/?wsdl")
 server = make_server('127.0.0.1', 8000, wsgi_application)
 server.serve_forever()
 
-                          
+
     

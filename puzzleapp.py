@@ -3,7 +3,12 @@ from kivy.uix.tabbedpanel import TabbedPanel
 from kivy.lang import Builder
 from puzzleLayout_on_Tab import PuzzleLayout_on_Tab
 from puzzleGrid_on_Tab import PuzzleGrid_on_Tab
+from kivy.properties import (ListProperty, BooleanProperty)
 
+from suds import WebFault
+from suds.client import Client
+from suds.cache import DocumentCache
+import logging
 
 __author__ = 'Makeev K.P.'
 
@@ -75,6 +80,13 @@ Builder.load_string("""
             font_size: 24
             size_hint: (0.2, 0.1)
             pos_hint: {'x':0.77, 'y': 0.035}
+        Button:
+            id: start_btn2
+            text: 'Start'
+            size_hint: (0.2, 0.1)
+            pos_hint: {'x': 0.35, 'y': 0.035}
+            font_size: self.height - 10
+            on_press: idPuzzleGrid_on_Tab3.start_on_II()
     TabbedPanelHeader:
         id: tab1
         border: 0, 0, 0, 0
@@ -164,7 +176,22 @@ class PuzzleGrid_on_Tab2(PuzzleGrid_on_Tab):
 
 
 class PuzzleGrid_on_Tab3(PuzzleGrid_on_Tab):
-    pass
+
+    isSoapPresent = BooleanProperty(False)
+
+    uri = 'http://localhost:8000/?wsdl'
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger('suds.client').setLevel(logging.CRITICAL)
+    try:
+        client = Client(uri)
+        client.set_options(cache=DocumentCache())
+        print("Connected to Soap Service - ", uri)
+        isSoapPresent = True
+
+    except:
+        # except WebFault as e:
+        print('Error connect to Soap service')
+        # play = True
 
 
 class AllPanel(TabbedPanel):
@@ -181,6 +208,7 @@ class PuzzleApp(App):
     icon = 'src//icon.png'
     title = 'Puzzle application'
 
+
     def build(self):
         tabbed_panel = self.tabbed_panel
         config = self.config
@@ -189,11 +217,16 @@ class PuzzleApp(App):
         tabbed_panel.ids['idPuzzleGrid_on_Tab2'].resize(int(s[0]), int(s[2]))
         tabbed_panel.ids['idPuzzleGrid_on_Tab3'].resize(int(s[0]), int(s[2]))
         tabbed_panel.ids['idPuzzleGrid_on_Tab2'].bind(play=self.onPlay)
+        tabbed_panel.ids['idPuzzleGrid_on_Tab3'].bind(play=self.onPlayII)
+        tabbed_panel.ids['idPuzzleGrid_on_Tab3'].play = not tabbed_panel.ids['idPuzzleGrid_on_Tab3'].isSoapPresent
+
         return tabbed_panel
 
     def onPlay(self, instance, value):
         self.tabbed_panel.ids['start_btn'].disabled = value
 
+    def onPlayII(self, instance, value):
+        self.tabbed_panel.ids['start_btn2'].disabled = value
 
     def build_config(self, config):
         config.add_section('puzzle')
