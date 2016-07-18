@@ -223,10 +223,21 @@ class PuzzleApp(App):
         return tabbed_panel
 
     def onPlay(self, instance, value):
-        self.tabbed_panel.ids['start_btn'].disabled = value
+        # self.tabbed_panel.ids['start_btn'].disabled = value
+        if value:
+            self.tabbed_panel.ids['start_btn'].text = 'Stop'
+        else:
+            self.tabbed_panel.ids['start_btn'].text = 'Start'
 
     def onPlayII(self, instance, value):
-        self.tabbed_panel.ids['start_btn2'].disabled = value
+        # self.tabbed_panel.ids['start_btn2'].disabled = value
+        if value:
+            self.tabbed_panel.ids['start_btn2'].text = 'Stop'
+        else:
+            self.tabbed_panel.ids['start_btn2'].text = 'Start'
+
+
+
 
     def build_config(self, config):
         config.add_section('puzzle')

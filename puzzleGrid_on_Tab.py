@@ -29,7 +29,8 @@ class PuzzleGrid_on_Tab(GridLayout):
     puzzle = puzz.puzzle
     step = 0
     play = BooleanProperty(False)
-    start_Th = threading.Event()
+    # start_Th = threading.Event()
+    start_Th_II = threading.Event()
 
     def __init__(self, *args, **kwargs):                    # конструктор
         super(PuzzleGrid_on_Tab, self).__init__(*args, **kwargs)
@@ -150,6 +151,7 @@ class PuzzleGrid_on_Tab(GridLayout):
                 break
         if result:
             print(' In chek win, puzzle - ', self.puzzle)
+            self.play = False
         return result
 
     def show_time(self, dt):
@@ -158,13 +160,18 @@ class PuzzleGrid_on_Tab(GridLayout):
 
 # Запуск эвристического поиска решения
     def start_evr(self):
-        print('In play on Evr')
-        if not self.start_Th.isSet():
+        print('In start/stop play on Evr')
+        if not self.play:
+        #if not self.start_Th.isSet():
             self.puzz.set_start(self.start)
             self.p1 = threading.Thread(target=self.searchOnEvrStart)  # Для запуска поиска решения в отдельном потоке
-            self.start_Th.set()
+            # self.start_Th.set()
             self.play = True
             self.p1.start()
+        else:
+            print('In Stop')
+            Clock.unschedule(self.my_play)
+            self.play = False
 
     def searchOnEvrStart(self):
         self.path_map = self.puzz.searchSolution()
@@ -172,15 +179,7 @@ class PuzzleGrid_on_Tab(GridLayout):
         print(len(self.path_map) - 1)
         self.step = len(self.path_map) - 1
         Clock.schedule_interval(self.my_play, 0.7)
-        self.start_Th.clear()
-
-    def stopPlayEvr(self):  # Останов игры после поиска решения эвристикой
-        # print('In Stop')
-        # print('Is Alive', self.p1.isAlive())
-        # if (self.start_Th.isSet() & self.p1.isAlive():
-        Clock.unschedule(self.my_play)
-        self.start_Th.clear()
-        # print ('Event start - ', self.start_Th.isSet())
+        # self.start_Th.clear()
 
     def my_play(self, dt):  # Игра с помощью найденного эвристического решения
 
@@ -197,44 +196,45 @@ class PuzzleGrid_on_Tab(GridLayout):
 
     # Запуск игры с помощью нейронной сети
     def start_on_II(self):
-        if self.isSoapPresent:
+        print('In start/stop play on II')
+
+        #if not self.start_Th_II.isSet() and self.isSoapPresent:
+        if not self.play:
+            self.p2 = threading.Thread(target=self.searchOnIIStart)  # Для запуска обращений к сервису в отдельном потоке
+            # self.start_Th_II.set()
             self.play = True
-            Clock.schedule_interval(self.my_playII, 1)
-        # if not self.start_Th.isSet():
-        #    self.puzz.set_start(self.start)
-        #    self.p1 = threading.Thread(
-        #        target=self.searchOnEvrStart)  # Для запуска поиска решения в отдельном потоке
-        #    self.start_Th.set()
-        #    self.play = True
-        #    self.p1.start()
+            self.p2.start()
+        else:
+            self.play = False
 
     # Игра с помощью нейронной сети
-    def my_playII(self, dt):
-
-        self.puzz.set_start(self.start)
-        values = self.puzz.searh_values()
-        # print('Values - ', values)
-        values.shape = (-1, 2, 2 * self.sizeH * self.sizeV)
-        pos = [0, 0]
-        maxIIValue = 0
-        self.iiValues = []
-        for X in values:
-            X.shape = (-1, 2 * self.sizeH * self.sizeV)
-            X = np.array(pad_sequences(X, maxlen=self.datadim, padding='post'))
-            X.shape = (-1, 2 * self.datadim)
-            prediction = self.client.service.get_predict_on_batch({'float': X[0].tolist()})
-            X.shape = (-1, self.datadim, 2)
-            self.iiValues.append(prediction[0][0])
-            if (prediction[0][0] > maxIIValue):
-                maxIIValue = prediction[0][0]
-                pos = X[0][self.datadim / 2 + self.sizeH * self.sizeV - 1]
-        self.iiValues.sort()
-        print('Values - ', self.iiValues)
-        print('MaxIIValue - ', maxIIValue)
-        print('Pos in MaxIIValue - ', pos)
-        self.press(pos.tolist())
-        self.play = False
-        Clock.unschedule(self.my_playII)
+    def searchOnIIStart(self):
+        print("In Thread II, schedule... ")
+        while not self.isWin and self.play:
+            self.puzz.set_start(self.start)
+            values = self.puzz.searh_values()
+            # print('Values - ', values)
+            values.shape = (-1, 2, 2 * self.sizeH * self.sizeV)
+            pos = [0, 0]
+            maxIIValue = 0
+            self.iiValues = []
+            for X in values:
+                X.shape = (-1, 2 * self.sizeH * self.sizeV)
+                X = np.array(pad_sequences(X, maxlen=self.datadim, padding='post'))
+                X.shape = (-1, 2 * self.datadim)
+                prediction = self.client.service.get_predict_on_batch({'float': X[0].tolist()})
+                X.shape = (-1, self.datadim, 2)
+                self.iiValues.append(prediction[0][0])
+                if (prediction[0][0] > maxIIValue):
+                    maxIIValue = prediction[0][0]
+                    pos = X[0][self.datadim / 2 + self.sizeH * self.sizeV - 1]
+            self.iiValues.sort()
+            print('Values - ', self.iiValues)
+            print('MaxIIValue - ', maxIIValue)
+            print('Pos in MaxIIValue - ', pos)
+            self.press(pos.tolist())
+        # self.play = False
+        # Clock.unschedule(self.my_playII)
 
     def press(self, pos):  # Эммитируем нажатиа на кнопку в которой указана передаваемая позиция
 
